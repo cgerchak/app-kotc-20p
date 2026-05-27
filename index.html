@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CCPC | King of the Court (20 Players)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">CCPC</p>
+          <h1 id="appTitle">King of the Court</h1>
+        </div>
+        <div class="game-chip" id="gameChip">Setup</div>
+      </header>
+
+      <section class="setup-view" id="setupView">
+        <div class="setup-panel">
+          <div class="panel-heading">
+            <h2>Players</h2>
+            <span id="playerCount">0 / 20</span>
+          </div>
+          <textarea
+            id="playerInput"
+            spellcheck="false"
+            placeholder="Alex, Blair, Casey&#10;Devon&#10;Ellis"
+          ></textarea>
+          <div class="setup-actions">
+            <button class="secondary-button" id="loadSampleButton" type="button">Load Sample</button>
+            <button class="primary-button" id="startButton" type="button" disabled>Start Game 1</button>
+          </div>
+          <p class="status-text" id="setupStatus"></p>
+        </div>
+      </section>
+
+      <section class="game-view hidden" id="gameView">
+        <div class="toolbar">
+          <div>
+            <h2 id="roundTitle">Game 1</h2>
+            <p id="roundSubtitle">Five courts active</p>
+          </div>
+          <button class="ghost-button" id="newSessionButton" type="button">New Session</button>
+        </div>
+
+        <div class="court-grid" id="courtGrid"></div>
+
+        <div class="review-bar" id="reviewBar">
+          <p id="reviewStatus">Select one winner per court.</p>
+          <div class="result-actions">
+            <button class="secondary-button" id="clearButton" type="button" disabled>Clear Results</button>
+            <button class="secondary-button" id="submitButton" type="button">Submit</button>
+            <button class="primary-button" id="confirmButton" type="button" disabled>Confirm Results</button>
+            <button class="danger-button hidden" id="endButton" type="button">End Games</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-view hidden" id="statsView">
+        <div class="toolbar">
+          <div>
+            <h2>Player Statistics</h2>
+            <p id="statsSubtitle">Final standings</p>
+          </div>
+          <button class="ghost-button" id="statsNewSessionButton" type="button">New Session</button>
+        </div>
+        <div class="stats-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player Name</th>
+                <th>Wins</th>
+                <th>Loses</th>
+                <th>KOTC Wins</th>
+                <th>Win %</th>
+              </tr>
+            </thead>
+            <tbody id="statsTable"></tbody>
+          </table>
+        </div>
+        <section class="results-recap" id="resultsRecap" aria-label="Game results recap"></section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
