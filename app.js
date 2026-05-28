@@ -358,10 +358,10 @@ function confirmResults() {
   if (!state.pendingResults) return;
   commitGame(state.pendingResults);
 
-  if (state.currentGame >= 4) {
+  if (state.currentGame >= 8) {
     state.ended = true;
     state.pendingResults = null;
-    els.reviewStatus.textContent = "Game 4 results confirmed. End games when ready.";
+    els.reviewStatus.textContent = "Game 8 results confirmed. End games when ready.";
     els.submitButton.disabled = true;
     els.clearButton.disabled = true;
     els.confirmButton.disabled = true;
