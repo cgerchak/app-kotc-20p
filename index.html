@@ -1,88 +1,1447 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CCPC | King of the Court (20 Players)</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">CCPC</p>
-          <h1 id="appTitle">King of the Court</h1>
-        </div>
-        <div class="game-chip" id="gameChip">Setup</div>
-      </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unveil Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: oklch(0.18 0.025 260);
+      --bg-2: oklch(0.23 0.035 260);
+      --panel: oklch(0.21 0.03 260 / 0.92);
+      --panel-strong: oklch(0.26 0.04 260 / 0.96);
+      --line: oklch(0.42 0.045 260 / 0.72);
+      --line-soft: oklch(0.35 0.04 260 / 0.5);
+      --text: oklch(0.96 0.012 95);
+      --muted: oklch(0.76 0.03 250);
+      --gold: oklch(0.83 0.135 80);
+      --gold-deep: oklch(0.58 0.12 75);
+      --green: oklch(0.74 0.18 145);
+      --red: oklch(0.68 0.22 25);
+      --shadow: 0 24px 70px oklch(0.08 0.03 260 / 0.48);
+      --radius: 8px;
+    }
 
-      <section class="setup-view" id="setupView">
-        <div class="setup-panel">
-          <div class="panel-heading">
-            <h2>Players</h2>
-            <span id="playerCount">0 / 20</span>
-          </div>
-          <textarea
-            id="playerInput"
-            spellcheck="false"
-            placeholder="Alex, Blair, Casey&#10;Devon&#10;Ellis"
-          ></textarea>
-          <div class="setup-actions">
-            <button class="secondary-button" id="loadSampleButton" type="button">Load Sample</button>
-            <button class="primary-button" id="startButton" type="button" disabled>Start Game 1</button>
-          </div>
-          <p class="status-text" id="setupStatus"></p>
-        </div>
-      </section>
+    * {
+      box-sizing: border-box;
+    }
 
-      <section class="game-view hidden" id="gameView">
-        <div class="toolbar">
-          <div>
-            <h2 id="roundTitle">Game 1</h2>
-            <p id="roundSubtitle">Five courts active</p>
-          </div>
-          <button class="ghost-button" id="newSessionButton" type="button">New Session</button>
-        </div>
+    html,
+    body {
+      min-height: 100%;
+    }
 
-        <div class="court-grid" id="courtGrid"></div>
+    body {
+      margin: 0;
+      background:
+        linear-gradient(145deg, oklch(0.16 0.028 260), var(--bg) 42%, oklch(0.13 0.025 245)),
+        var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
 
-        <div class="review-bar" id="reviewBar">
-          <p id="reviewStatus">Select one winner per court.</p>
-          <div class="result-actions">
-            <button class="secondary-button" id="clearButton" type="button" disabled>Clear Results</button>
-            <button class="secondary-button" id="submitButton" type="button">Submit</button>
-            <button class="primary-button" id="confirmButton" type="button" disabled>Confirm Results</button>
-            <button class="danger-button hidden" id="endButton" type="button">End Games</button>
-          </div>
-        </div>
-      </section>
+    button,
+    input {
+      font: inherit;
+    }
 
-      <section class="stats-view hidden" id="statsView">
-        <div class="toolbar">
-          <div>
-            <h2>Player Statistics</h2>
-            <p id="statsSubtitle">Final standings</p>
-          </div>
-          <button class="ghost-button" id="statsNewSessionButton" type="button">New Session</button>
-        </div>
-        <div class="stats-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Player Name</th>
-                <th>Wins</th>
-                <th>Loses</th>
-                <th>KOTC Wins</th>
-                <th>Win %</th>
-              </tr>
-            </thead>
-            <tbody id="statsTable"></tbody>
-          </table>
-        </div>
-        <section class="results-recap" id="resultsRecap" aria-label="Game results recap"></section>
-      </section>
-    </main>
+    button {
+      cursor: pointer;
+    }
 
-    <script src="app.js"></script>
-  </body>
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .app-shell::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(1 0 0 / 0.026) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    .topbar {
+      align-items: center;
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      margin: 0 auto 22px;
+      max-width: 1240px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      align-items: center;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      display: grid;
+      flex: 0 0 auto;
+      font-weight: 700;
+      height: 44px;
+      place-items: center;
+      width: 44px;
+    }
+
+    .brand h1 {
+      font-size: clamp(1.55rem, 4vw, 2.5rem);
+      line-height: 1;
+      margin: 0;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 5px 0 0;
+    }
+
+    .scoreboard {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, max-content));
+      min-width: auto;
+      justify-content: end;
+      align-items: center;
+    }
+
+    .score-tile {
+      background: var(--panel);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .score-tile span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .score-tile strong {
+      color: var(--gold);
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(1.28rem, 2vw, 1.85rem);
+      margin-top: 5px;
+      white-space: nowrap;
+    }
+
+    .game-layout {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: minmax(320px, 640px) minmax(300px, 430px);
+      justify-content: center;
+      margin: 0 auto;
+      max-width: 1240px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .image-stage {
+      align-self: start;
+      background: linear-gradient(180deg, var(--panel-strong), oklch(0.16 0.02 260 / 0.95));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .category-line {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      font-size: 0.88rem;
+      font-weight: 600;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      min-height: 22px;
+      text-transform: uppercase;
+    }
+
+    .category-line span:last-child {
+      color: var(--gold);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .frame {
+      aspect-ratio: 1;
+      background: oklch(0.11 0.02 260);
+      border: 6px solid oklch(0.4 0.045 260);
+      border-radius: var(--radius);
+      max-width: 560px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+      width: 100%;
+    }
+
+    .frame.correct {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px oklch(0.74 0.18 145 / 0.28), 0 24px 60px oklch(0.74 0.18 145 / 0.15);
+    }
+
+    .frame.wrong {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px oklch(0.68 0.22 25 / 0.28), 0 24px 60px oklch(0.68 0.22 25 / 0.15);
+    }
+
+    .frame::before,
+    .frame::after,
+    .corner-bottom {
+      content: "";
+      height: 54px;
+      pointer-events: none;
+      position: absolute;
+      width: 54px;
+      z-index: 3;
+    }
+
+    .frame::before {
+      border-left: 3px solid var(--gold);
+      border-top: 3px solid var(--gold);
+      left: 16px;
+      top: 16px;
+    }
+
+    .frame::after {
+      border-right: 3px solid var(--gold);
+      border-top: 3px solid var(--gold);
+      right: 16px;
+      top: 16px;
+    }
+
+    .corner-bottom.left {
+      border-bottom: 3px solid var(--gold);
+      border-left: 3px solid var(--gold);
+      bottom: 16px;
+      left: 16px;
+    }
+
+    .corner-bottom.right {
+      border-bottom: 3px solid var(--gold);
+      border-right: 3px solid var(--gold);
+      bottom: 16px;
+      right: 16px;
+    }
+
+    canvas {
+      display: block;
+      height: 100%;
+      image-rendering: pixelated;
+      width: 100%;
+    }
+
+    .verdict-mark {
+      align-items: center;
+      animation: verdict-pop 950ms ease both;
+      background: oklch(0.08 0.025 260 / 0.45);
+      display: grid;
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(5rem, 18vw, 11rem);
+      font-weight: 700;
+      inset: 0;
+      place-items: center;
+      position: absolute;
+      text-shadow: 0 8px 30px oklch(0.05 0.02 260 / 0.7);
+      z-index: 4;
+    }
+
+    .verdict-mark.correct {
+      color: var(--green);
+    }
+
+    .verdict-mark.wrong {
+      color: var(--red);
+    }
+
+    @keyframes verdict-pop {
+      0% { opacity: 0; transform: scale(0.72); }
+      16% { opacity: 1; transform: scale(1.05); }
+      72% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.96); }
+    }
+
+    .meta-row {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82rem;
+      justify-content: space-between;
+      margin-top: 14px;
+      min-height: 24px;
+    }
+
+    .side-panel {
+      align-self: start;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 560px;
+      padding: 22px;
+    }
+
+    .prompt-header {
+      border-bottom: 1px solid var(--line-soft);
+      padding-bottom: 16px;
+    }
+
+    .prompt-header span {
+      color: var(--gold);
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .prompt-header h2 {
+      font-size: 1.55rem;
+      line-height: 1.12;
+      margin: 8px 0 0;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin: 20px 0;
+      min-height: 236px;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 250ms ease, transform 250ms ease;
+    }
+
+    .options.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+    }
+
+    .option-card {
+      align-items: center;
+      background: oklch(0.25 0.035 260 / 0.88);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 20px 1fr;
+      min-height: 50px;
+      padding: 12px 14px;
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+
+    .option-card:hover {
+      border-color: oklch(0.83 0.135 80 / 0.55);
+      transform: translateY(-1px);
+    }
+
+    .option-card:has(input:checked) {
+      background: oklch(0.31 0.052 255 / 0.94);
+      border-color: var(--gold);
+    }
+
+    .option-card input {
+      accent-color: var(--gold);
+      height: 18px;
+      margin: 0;
+      width: 18px;
+    }
+
+    .option-card span {
+      color: var(--text);
+      font-weight: 600;
+      line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      align-items: center;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      display: inline-flex;
+      font-weight: 700;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 16px;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+      width: 100%;
+    }
+
+    .primary-button {
+      background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+      color: oklch(0.15 0.03 260);
+    }
+
+    .secondary-button {
+      background: oklch(0.25 0.035 260);
+      border-color: var(--line-soft);
+      color: var(--text);
+    }
+
+    .primary-button:not(:disabled):hover,
+    .secondary-button:not(:disabled):hover {
+      transform: translateY(-1px);
+    }
+
+    .status-note {
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.5;
+      min-height: 44px;
+    }
+
+    .history-strip {
+      border-top: 1px solid var(--line-soft);
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(10, 1fr);
+      margin-top: 20px;
+      padding-top: 18px;
+    }
+
+    .history-dot {
+      aspect-ratio: 1;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      min-width: 0;
+    }
+
+    .history-dot.correct {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .history-dot.wrong {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .loader {
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+      left: 50%;
+      max-width: min(92vw, 560px);
+      padding: 32px;
+      place-items: center;
+      position: fixed;
+      text-align: center;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+    }
+
+    .loader h2 {
+      margin: 0;
+    }
+
+    .loader p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .end-overlay {
+      align-items: center;
+      backdrop-filter: blur(14px);
+      background: oklch(0.09 0.025 260 / 0.75);
+      display: grid;
+      inset: 0;
+      padding: 24px;
+      position: fixed;
+      z-index: 30;
+    }
+
+    .end-card {
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 0 auto;
+      max-width: 860px;
+      padding: 28px;
+      width: 100%;
+    }
+
+    .end-card h2 {
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      line-height: 1;
+      margin: 0;
+    }
+
+    .end-card > p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 10px 0 20px;
+    }
+
+    .final-score {
+      color: var(--gold);
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(2.2rem, 9vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1;
+      margin: 12px 0 18px;
+    }
+
+    .final-score.negative {
+      color: var(--red);
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 0 0 18px;
+    }
+
+    .summary-grid div {
+      background: oklch(0.18 0.025 260 / 0.76);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .summary-grid span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summary-grid strong {
+      color: var(--text);
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.45rem;
+      margin-top: 4px;
+    }
+
+    .round-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 18px 0 22px;
+    }
+
+    .round-card {
+      background: oklch(0.18 0.025 260 / 0.78);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      min-height: 88px;
+      padding: 10px;
+    }
+
+    .round-card.correct {
+      border-color: oklch(0.74 0.18 145 / 0.75);
+    }
+
+    .round-card.wrong {
+      border-color: oklch(0.68 0.22 25 / 0.75);
+    }
+
+    .round-card span {
+      color: var(--muted);
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.72rem;
+      margin-bottom: 6px;
+    }
+
+    .round-card b {
+      display: block;
+      font-size: 0.83rem;
+      line-height: 1.15;
+      min-height: 38px;
+      overflow-wrap: anywhere;
+    }
+
+    .round-card strong {
+      color: var(--gold);
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    .round-card.wrong strong {
+      color: var(--red);
+    }
+
+    .tweaks-panel {
+      bottom: 18px;
+      position: fixed;
+      right: 18px;
+      z-index: 50;
+    }
+
+    .tweaks-tab {
+      background: var(--gold);
+      border: 0;
+      border-radius: var(--radius);
+      color: oklch(0.14 0.03 260);
+      font-weight: 700;
+      min-height: 42px;
+      min-width: 92px;
+      padding: 10px 14px;
+    }
+
+    .tweaks-body {
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      bottom: 54px;
+      box-shadow: var(--shadow);
+      display: none;
+      max-height: min(680px, calc(100vh - 96px));
+      overflow: auto;
+      padding: 16px;
+      position: absolute;
+      right: 0;
+      width: min(360px, calc(100vw - 36px));
+    }
+
+    .tweaks-panel.is-open .tweaks-body {
+      display: block;
+    }
+
+    .tweaks-heading {
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .tweak-section {
+      border-top: 1px solid var(--line-soft);
+      padding: 12px 0;
+    }
+
+    .tweak-section h3 {
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      margin: 0 0 10px;
+      text-transform: uppercase;
+    }
+
+    .tweak-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tweak-control,
+    .tweak-toggle {
+      display: grid;
+      gap: 8px;
+    }
+
+    .tweak-control span,
+    .tweak-toggle {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .tweak-control b,
+    .tweak-toggle span {
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .tweak-control output {
+      color: var(--gold);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+    }
+
+    .tweak-control input[type="range"] {
+      accent-color: var(--gold);
+      width: 100%;
+    }
+
+    .tweak-toggle input {
+      accent-color: var(--gold);
+      height: 19px;
+      width: 19px;
+    }
+
+    .tweak-button {
+      border-radius: var(--radius);
+      font-weight: 700;
+      min-height: 40px;
+      padding: 9px 12px;
+    }
+
+    .tweak-button.primary {
+      background: var(--gold);
+      border: 0;
+      color: oklch(0.14 0.03 260);
+    }
+
+    .tweak-button.secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .scoreboard {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .game-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .side-panel {
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app-shell {
+        padding: 14px;
+      }
+
+      .scoreboard,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .image-stage,
+      .side-panel,
+      .end-card {
+        padding: 14px;
+      }
+
+      .round-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .history-strip {
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel">
+    const {
+      useCallback,
+      useEffect,
+      useMemo,
+      useRef,
+      useState
+    } = React;
+
+    const MAX_ROUNDS = 10;
+    const DISPLAY_SIZE = 560;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "stepMs": 1000,
+      "startPoints": 1000,
+      "optionsDelayMs": 1000,
+      "submitGateMs": 1000,
+      "showResMeta": true
+    }/*EDITMODE-END*/;
+
+    const PIXEL_STEPS = [
+      { w: 1, h: 1 },
+      { w: 2, h: 1 },
+      { w: 2, h: 2 },
+      { w: 4, h: 2 },
+      { w: 4, h: 4 },
+      { w: 8, h: 4 },
+      { w: 8, h: 8 },
+      { w: 16, h: 8 },
+      { w: 16, h: 16 },
+      { w: 32, h: 16 },
+      { w: 32, h: 32 },
+      { w: 64, h: 32 },
+      { w: 64, h: 64 },
+      { w: 128, h: 64 },
+      { w: 128, h: 128 },
+      { w: 256, h: 128 },
+      { w: 256, h: 256 }
+    ];
+
+    const CATEGORIES = [
+      {
+        name: "World Landmarks",
+        items: [
+          { title: "Eiffel Tower", file: "Tour Eiffel Wikimedia Commons.jpg", asset: "tour-eiffel.jpg" },
+          { title: "Statue of Liberty", file: "Statue of Liberty 7.jpg", asset: "statue-of-liberty.jpg" },
+          { title: "Taj Mahal", file: "Taj Mahal in March 2004.jpg", asset: "taj-mahal.jpg" },
+          { title: "Colosseum", file: "Colosseo 2020.jpg", asset: "colosseum.jpg" },
+          { title: "Sydney Opera House", file: "Sydney Opera House - Dec 2008.jpg", asset: "sydney-opera-house.jpg" },
+          { title: "Pyramids of Giza", file: "All Gizah Pyramids.jpg", asset: "pyramids-of-giza.jpg" },
+          { title: "Golden Gate Bridge", file: "Golden Gate Bridge as seen from Battery East.jpg", asset: "golden-gate-bridge.jpg" },
+          { title: "Mount Fuji", file: "Mount Fuji from Lake Kawaguchi.jpg", asset: "mount-fuji.jpg" },
+          { title: "Big Ben", file: "Elizabeth Tower Palace of Westminster.jpg", asset: "big-ben.jpg" },
+          { title: "Christ the Redeemer", file: "Christ the Redeemer.jpg", asset: "christ-the-redeemer.jpg" },
+          { title: "Stonehenge", file: "Stonehenge2007 07 30.jpg", asset: "stonehenge.jpg" },
+          { title: "Leaning Tower of Pisa", file: "Leaning tower of pisa 2.jpg", asset: "leaning-tower-of-pisa.jpg" },
+          { title: "Brandenburg Gate", file: "Brandenburger Tor abends.jpg", asset: "brandenburg-gate.jpg" },
+          { title: "Burj Khalifa", file: "Burj Khalifa (16260269606).jpg", asset: "burj-khalifa.jpg" }
+        ]
+      },
+      {
+        name: "Famous Paintings",
+        items: [
+          { title: "Mona Lisa", file: "Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg", asset: "mona-lisa.jpg" },
+          { title: "The Starry Night", file: "Van Gogh - Starry Night - Google Art Project.jpg", asset: "starry-night.jpg" },
+          { title: "The Great Wave off Kanagawa", file: "Great Wave off Kanagawa2.jpg", asset: "great-wave-off-kanagawa.jpg" },
+          { title: "American Gothic", file: "Grant Wood - American Gothic - Google Art Project.jpg", asset: "american-gothic.jpg" },
+          { title: "The Birth of Venus", file: "Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg", asset: "birth-of-venus.jpg" },
+          { title: "Girl with a Pearl Earring", file: "Meisje met de parel.jpg", asset: "girl-with-a-pearl-earring.jpg" },
+          { title: "The Scream", file: "The Scream.jpg", asset: "the-scream.jpg" },
+          { title: "Sunflowers", file: "Vincent Willem van Gogh 128.jpg", asset: "sunflowers.jpg" },
+          { title: "The Last Supper", file: "Leonardo da Vinci (1452-1519) - The Last Supper (1495-1498).jpg", asset: "last-supper.jpg" },
+          { title: "The Kiss", file: "The Kiss - Gustav Klimt - Google Cultural Institute.jpg", asset: "the-kiss.jpg" },
+          { title: "Las Meninas", file: "Las Meninas, by Diego Vel\u00e1zquez, from Prado in Google Earth.jpg", asset: "las-meninas.jpg" },
+          { title: "The Night Watch", file: "The Night Watch - HD.jpg", asset: "night-watch.jpg" },
+          { title: "Whistler's Mother", file: "Whistlers Mother high res.jpg", asset: "whistlers-mother.jpg" },
+          { title: "The Garden of Earthly Delights", file: "The Garden of Earthly Delights by Bosch High Resolution.jpg", asset: "garden-of-earthly-delights.jpg" }
+        ]
+      }
+    ];
+
+    const FILE_PATHS = {
+      "Tour Eiffel Wikimedia Commons.jpg": "a/a8",
+      "Statue of Liberty 7.jpg": "a/a1",
+      "Taj Mahal in March 2004.jpg": "c/c8",
+      "Colosseo 2020.jpg": "d/de",
+      "Sydney Opera House - Dec 2008.jpg": "7/7c",
+      "All Gizah Pyramids.jpg": "a/af",
+      "Golden Gate Bridge as seen from Battery East.jpg": "b/bf",
+      "Mount Fuji from Lake Kawaguchi.jpg": "1/1c",
+      "Elizabeth Tower Palace of Westminster.jpg": "e/eb",
+      "Christ the Redeemer.jpg": "2/26",
+      "Stonehenge2007 07 30.jpg": "3/3c",
+      "Leaning tower of pisa 2.jpg": "e/e4",
+      "Brandenburger Tor abends.jpg": "a/a6",
+      "Burj Khalifa (16260269606).jpg": "a/a6",
+      "Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg": "e/ec",
+      "Van Gogh - Starry Night - Google Art Project.jpg": "e/ea",
+      "Great Wave off Kanagawa2.jpg": "0/0d",
+      "Grant Wood - American Gothic - Google Art Project.jpg": "c/cc",
+      "Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg": "0/0b",
+      "Meisje met de parel.jpg": "d/d7",
+      "The Scream.jpg": "f/f4",
+      "Vincent Willem van Gogh 128.jpg": "b/b4",
+      "Leonardo da Vinci (1452-1519) - The Last Supper (1495-1498).jpg": "0/08",
+      "The Kiss - Gustav Klimt - Google Cultural Institute.jpg": "4/40",
+      "Las Meninas, by Diego Vel\u00e1zquez, from Prado in Google Earth.jpg": "3/31",
+      "The Night Watch - HD.jpg": "5/5a",
+      "Whistlers Mother high res.jpg": "1/1b",
+      "The Garden of Earthly Delights by Bosch High Resolution.jpg": "6/6d"
+    };
+
+    function wikiSrc(file, width = 960) {
+      const path = FILE_PATHS[file];
+      if (!path) return fallbackWikiSrc(file, width);
+      const canonical = file.replaceAll(" ", "_");
+      const encoded = encodeURIComponent(canonical);
+      return `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}/${encoded}/${width}px-${encoded}`;
+    }
+
+    function fallbackWikiSrc(file, width = 960) {
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
+    }
+
+    function localSrc(item) {
+      return item.asset ? `assets/wikimedia/${item.asset}` : "";
+    }
+
+    function preloadImageFrom(item, src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({
+          ...item,
+          image,
+          src: image.currentSrc || image.src,
+          naturalWidth: image.naturalWidth,
+          naturalHeight: image.naturalHeight
+        });
+        image.onerror = reject;
+        image.src = src;
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function preloadImage(item) {
+      const local = localSrc(item);
+
+      if (local) {
+        try {
+          return await preloadImageFrom(item, local);
+        } catch (error) {
+          console.warn(`Could not load local image for ${item.title}; falling back to Wikimedia.`);
+        }
+      }
+
+      try {
+        return await preloadImageFrom(item, wikiSrc(item.file));
+      } catch (error) {
+        return preloadImageFrom(item, fallbackWikiSrc(item.file));
+      }
+    }
+
+    async function preloadCategoryItems(items) {
+      const loaded = [];
+      for (const item of items) {
+        if (loaded.length >= MAX_ROUNDS) break;
+        try {
+          loaded.push(await preloadImage(item));
+        } catch (error) {
+          console.warn(`Could not load ${item.title}`);
+        }
+        await sleep(350);
+      }
+      return loaded;
+    }
+
+    function shuffle(items) {
+      const copy = [...items];
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function formatPoints(value) {
+      return new Intl.NumberFormat("en-US").format(Math.round(value));
+    }
+
+    function drawPixelated(canvas, item, stepIdx) {
+      if (!canvas || !item?.image) return;
+
+      const step = PIXEL_STEPS[stepIdx];
+      const ctx = canvas.getContext("2d");
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const internalSize = DISPLAY_SIZE * dpr;
+
+      if (canvas.width !== internalSize || canvas.height !== internalSize) {
+        canvas.width = internalSize;
+        canvas.height = internalSize;
+      }
+
+      ctx.clearRect(0, 0, internalSize, internalSize);
+
+      const img = item.image;
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth - side) / 2;
+      const sy = (img.naturalHeight - side) / 2;
+
+      if (stepIdx === PIXEL_STEPS.length - 1) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, internalSize, internalSize);
+        return;
+      }
+
+      const tiny = document.createElement("canvas");
+      tiny.width = step.w;
+      tiny.height = step.h;
+      const tinyCtx = tiny.getContext("2d");
+      tinyCtx.imageSmoothingEnabled = true;
+      tinyCtx.imageSmoothingQuality = "high";
+      tinyCtx.drawImage(img, sx, sy, side, side, 0, 0, step.w, step.h);
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(tiny, 0, 0, step.w, step.h, 0, 0, internalSize, internalSize);
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [categories, setCategories] = useState([]);
+      const [loadState, setLoadState] = useState("loading");
+      const [loadNote, setLoadNote] = useState("Loading cached image assets.");
+      const [currentCategory, setCurrentCategory] = useState(null);
+      const [queue, setQueue] = useState([]);
+      const [currentItem, setCurrentItem] = useState(null);
+      const [roundNum, setRoundNum] = useState(1);
+      const [roundResults, setRoundResults] = useState([]);
+      const [gameOver, setGameOver] = useState(false);
+      const [stepIdx, setStepIdx] = useState(0);
+      const [optionsVisible, setOptionsVisible] = useState(false);
+      const [options, setOptions] = useState([]);
+      const [selected, setSelected] = useState("");
+      const [submitReady, setSubmitReady] = useState(false);
+      const [verdict, setVerdict] = useState(null);
+      const [score, setScore] = useState(0);
+      const [roundPoints, setRoundPoints] = useState(t.startPoints);
+      const [lockedPoints, setLockedPoints] = useState(null);
+      const canvasRef = useRef(null);
+      const gateRef = useRef(null);
+      const roundStartRef = useRef(0);
+      const pausedAtRef = useRef(null);
+      const pauseTotalRef = useRef(0);
+
+      const totalRevealMs = useMemo(
+        () => (PIXEL_STEPS.length - 1) * t.stepMs,
+        [t.stepMs]
+      );
+
+      const currentRoundPoints = lockedPoints ?? roundPoints;
+      const correctCount = roundResults.filter((result) => result.correct).length;
+      const wrongCount = roundResults.length - correctCount;
+      const bestRound = roundResults.length
+        ? Math.max(...roundResults.map((result) => result.delta))
+        : 0;
+
+      const generateOptions = useCallback((category, answer) => {
+        const decoys = shuffle(category.items.filter((item) => item.title !== answer.title))
+          .slice(0, 3)
+          .map((item) => item.title);
+        return shuffle([answer.title, ...decoys]);
+      }, []);
+
+      const startRound = useCallback((category, nextQueue, index) => {
+        const [nextItem, ...remaining] = nextQueue;
+        if (!nextItem) return;
+
+        clearTimeout(gateRef.current);
+        setCurrentCategory(category);
+        setQueue(remaining);
+        setCurrentItem(nextItem);
+        setRoundNum(index);
+        setStepIdx(0);
+        setOptionsVisible(false);
+        setOptions(generateOptions(category, nextItem));
+        setSelected("");
+        setSubmitReady(false);
+        setVerdict(null);
+        setRoundPoints(t.startPoints);
+        setLockedPoints(null);
+        setGameOver(false);
+        roundStartRef.current = performance.now();
+        pausedAtRef.current = null;
+        pauseTotalRef.current = 0;
+      }, [generateOptions, t.startPoints]);
+
+      const newGame = useCallback((sourceCategories = categories) => {
+        if (!sourceCategories.length) return;
+        const category = shuffle(sourceCategories)[0];
+        const nextQueue = shuffle(category.items).slice(0, MAX_ROUNDS);
+        setRoundResults([]);
+        setScore(0);
+        startRound(category, nextQueue, 1);
+      }, [categories, startRound]);
+
+      const restartRound = useCallback(() => {
+        if (!currentCategory || !currentItem) return;
+        startRound(currentCategory, [currentItem, ...queue], roundNum);
+      }, [currentCategory, currentItem, queue, roundNum, startRound]);
+
+      const advanceRound = useCallback(() => {
+        if (!currentCategory) return;
+        if (roundNum >= MAX_ROUNDS) {
+          setGameOver(true);
+          return;
+        }
+        startRound(currentCategory, queue, roundNum + 1);
+      }, [currentCategory, queue, roundNum, startRound]);
+
+      useEffect(() => {
+        let cancelled = false;
+
+        async function load() {
+          setLoadState("loading");
+          setLoadNote("Preloading cached local images.");
+          const loadedCategories = [];
+
+          for (const category of CATEGORIES) {
+            const items = await preloadCategoryItems(category.items);
+
+            if (items.length >= MAX_ROUNDS) {
+              loadedCategories.push({ ...category, items });
+            }
+          }
+
+          if (cancelled) return;
+
+          if (!loadedCategories.length) {
+            setLoadState("error");
+            setLoadNote("Not enough local or fallback Wikimedia images loaded to build a 10-round game.");
+            return;
+          }
+
+          setCategories(loadedCategories);
+          setLoadState("ready");
+          newGame(loadedCategories);
+        }
+
+        load();
+        return () => {
+          cancelled = true;
+        };
+      }, []);
+
+      useEffect(() => {
+        drawPixelated(canvasRef.current, currentItem, stepIdx);
+      }, [currentItem, stepIdx]);
+
+      useEffect(() => {
+        if (!currentItem || verdict || selected) return undefined;
+
+        const timer = window.setInterval(() => {
+          setStepIdx((current) => Math.min(current + 1, PIXEL_STEPS.length - 1));
+        }, t.stepMs);
+
+        return () => window.clearInterval(timer);
+      }, [currentItem, selected, t.stepMs, verdict]);
+
+      useEffect(() => {
+        if (!currentItem || verdict || selected) return undefined;
+
+        const timer = window.setTimeout(() => setOptionsVisible(true), t.optionsDelayMs);
+        return () => window.clearTimeout(timer);
+      }, [currentItem, selected, t.optionsDelayMs, verdict]);
+
+      useEffect(() => {
+        if (!currentItem || verdict) return undefined;
+
+        let frame = 0;
+        const tick = (now) => {
+          if (!selected) {
+            const elapsed = Math.max(0, now - roundStartRef.current - pauseTotalRef.current);
+            const progress = Math.min(elapsed / totalRevealMs, 1);
+            const nextPoints = Math.max(1, Math.round(t.startPoints - progress * (t.startPoints - 1)));
+            setRoundPoints(nextPoints);
+          }
+          frame = requestAnimationFrame(tick);
+        };
+
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+      }, [currentItem, selected, t.startPoints, totalRevealMs, verdict]);
+
+      useEffect(() => {
+        setRoundPoints((points) => Math.min(points, t.startPoints));
+        if (!selected) {
+          setLockedPoints(null);
+        }
+      }, [t.startPoints, selected]);
+
+      useEffect(() => {
+        const handler = (event) => {
+          if (event.key === "Enter") {
+            if (verdict) {
+              advanceRound();
+            } else if (submitReady) {
+              submitGuess();
+            }
+          }
+          if ((event.key === "n" || event.key === "N") && verdict) {
+            advanceRound();
+          }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+      });
+
+      function selectOption(title) {
+        if (verdict) return;
+        setSelected(title);
+        setLockedPoints(roundPoints);
+        setSubmitReady(false);
+        pausedAtRef.current = performance.now();
+        clearTimeout(gateRef.current);
+        gateRef.current = window.setTimeout(() => setSubmitReady(true), t.submitGateMs);
+      }
+
+      function submitGuess() {
+        if (!currentItem || !selected || !submitReady || verdict) return;
+
+        const correct = selected === currentItem.title;
+        const points = Math.max(1, Math.round(lockedPoints ?? roundPoints));
+        const delta = correct ? points : -points;
+        const result = {
+          round: roundNum,
+          title: currentItem.title,
+          selected,
+          points,
+          delta,
+          correct
+        };
+
+        clearTimeout(gateRef.current);
+        setVerdict(correct ? "correct" : "wrong");
+        setStepIdx(PIXEL_STEPS.length - 1);
+        setScore((value) => value + delta);
+        setRoundResults((items) => [...items, result]);
+      }
+
+      function releasePause() {
+        if (pausedAtRef.current) {
+          pauseTotalRef.current += performance.now() - pausedAtRef.current;
+          pausedAtRef.current = null;
+        }
+      }
+
+      function changeSelection(title) {
+        if (verdict) return;
+        if (!selected) {
+          selectOption(title);
+          return;
+        }
+        setSelected(title);
+      }
+
+      const statusText = useMemo(() => {
+        if (!currentItem) return "";
+        if (verdict === "correct") return `Correct: ${currentItem.title}.`;
+        if (verdict === "wrong") return `It was ${currentItem.title}.`;
+        if (!optionsVisible) return "Options appear after the first beat.";
+        if (!selected) return "Make your call when the picture gives itself away.";
+        if (!submitReady) return "Answer locked. Submit opens in a moment.";
+        return "Submit is live.";
+      }, [currentItem, optionsVisible, selected, submitReady, verdict]);
+
+      if (loadState !== "ready" || !currentItem) {
+        return (
+          <main className="app-shell">
+            <div className="loader">
+              <h2>{loadState === "error" ? "Images unavailable" : "Preparing Unveil"}</h2>
+              <p>{loadNote}</p>
+              {loadState === "error" && (
+                <button className="primary-button" type="button" onClick={() => window.location.reload()}>
+                  Retry
+                </button>
+              )}
+            </div>
+          </main>
+        );
+      }
+
+      return (
+        <main className="app-shell">
+          <header className="topbar">
+            <div className="brand">
+              <div className="brand-mark">U</div>
+              <div>
+                <h1>Unveil</h1>
+                <p>Pixel by pixel, beat the reveal.</p>
+              </div>
+            </div>
+            <div className="scoreboard" aria-label="Game scores">
+              <div className="score-tile">
+                <span>Round Score</span>
+                <strong>{formatPoints(currentRoundPoints)}</strong>
+              </div>
+              <div className="score-tile">
+                <span>Total Score</span>
+                <strong>{formatPoints(score)}</strong>
+              </div>
+              <div className="score-tile">
+                <span>Round</span>
+                <strong>{roundNum}/{MAX_ROUNDS}</strong>
+              </div>
+            </div>
+          </header>
+
+          <section className="game-layout">
+            <div className="image-stage">
+              <div className="category-line">
+                <span>{currentCategory?.name}</span>
+                <span>{PIXEL_STEPS[stepIdx].w}x{PIXEL_STEPS[stepIdx].h}</span>
+              </div>
+              <div className={`frame ${verdict || ""}`}>
+                <canvas ref={canvasRef} width={DISPLAY_SIZE} height={DISPLAY_SIZE} aria-label="Mystery image" />
+                <span className="corner-bottom left" />
+                <span className="corner-bottom right" />
+                {verdict && (
+                  <div className={`verdict-mark ${verdict}`} aria-hidden="true">
+                    {verdict === "correct" ? "✓" : "X"}
+                  </div>
+                )}
+              </div>
+              <div className="meta-row">
+                {t.showResMeta ? (
+                  <>
+                    <span>{currentItem.naturalWidth}x{currentItem.naturalHeight} source</span>
+                    <span>{Math.round(((stepIdx + 1) / PIXEL_STEPS.length) * 100)}%</span>
+                  </>
+                ) : <span />}
+              </div>
+            </div>
+
+            <aside className="side-panel">
+              <div className="prompt-header">
+                <span>Question {roundNum}</span>
+              </div>
+
+              <div className={`options ${optionsVisible ? "" : "hidden"}`} aria-hidden={!optionsVisible}>
+                {options.map((title) => (
+                  <label className="option-card" key={title}>
+                    <input
+                      type="radio"
+                      name="guess"
+                      value={title}
+                      checked={selected === title}
+                      disabled={!optionsVisible || Boolean(verdict)}
+                      onChange={() => changeSelection(title)}
+                    />
+                    <span>{title}</span>
+                  </label>
+                ))}
+              </div>
+
+              <p className="status-note">{statusText}</p>
+              <div className="controls">
+                {!verdict ? (
+                  <button
+                    className="primary-button"
+                    type="button"
+                    disabled={!submitReady}
+                    onClick={submitGuess}
+                  >
+                    Submit Answer
+                  </button>
+                ) : (
+                  <button className="primary-button" type="button" onClick={advanceRound}>
+                    {roundNum >= MAX_ROUNDS ? "See Results" : "Next"}
+                  </button>
+                )}
+                {selected && !verdict && !submitReady && (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => {
+                      releasePause();
+                      clearTimeout(gateRef.current);
+                      setSelected("");
+                      setLockedPoints(null);
+                      setSubmitReady(false);
+                    }}
+                  >
+                    Release Answer
+                  </button>
+                )}
+              </div>
+
+              <div className="history-strip" aria-label="Round history">
+                {Array.from({ length: MAX_ROUNDS }).map((_, index) => {
+                  const result = roundResults[index];
+                  return <span key={index} className={`history-dot ${result ? (result.correct ? "correct" : "wrong") : ""}`} />;
+                })}
+              </div>
+            </aside>
+          </section>
+
+          <TweaksPanel title="Unveil Controls">
+            <TweakSection title="Timing">
+              <TweakSlider label="Step duration" min={100} max={2000} step={50} value={t.stepMs} unit="ms" onChange={(value) => setTweak("stepMs", value)} />
+              <TweakSlider label="Options appear after" min={0} max={5000} step={100} value={t.optionsDelayMs} unit="ms" onChange={(value) => setTweak("optionsDelayMs", value)} />
+              <TweakSlider label="Submit gate" min={0} max={3000} step={100} value={t.submitGateMs} unit="ms" onChange={(value) => setTweak("submitGateMs", value)} />
+            </TweakSection>
+            <TweakSection title="Scoring">
+              <TweakSlider label="Starting points" min={100} max={5000} step={100} value={t.startPoints} onChange={(value) => setTweak("startPoints", value)} />
+              <TweakToggle label="Show resolution meta" checked={t.showResMeta} onChange={(value) => setTweak("showResMeta", value)} />
+            </TweakSection>
+            <TweakSection title="Round">
+              <TweakButton onClick={restartRound}>Restart current round</TweakButton>
+              <TweakButton variant="secondary" onClick={() => newGame()}>Skip to new game</TweakButton>
+            </TweakSection>
+          </TweaksPanel>
+
+          {gameOver && (
+            <div className="end-overlay" role="dialog" aria-modal="true" aria-labelledby="game-complete">
+              <div className="end-card">
+                <h2 id="game-complete">Game complete</h2>
+                <p>{correctCount === MAX_ROUNDS ? "Flawless run." : `${correctCount} of ${MAX_ROUNDS} correct.`}</p>
+                <div className={`final-score ${score < 0 ? "negative" : ""}`}>{formatPoints(score)}</div>
+                <div className="summary-grid">
+                  <div><span>Correct</span><strong>{correctCount}</strong></div>
+                  <div><span>Wrong</span><strong>{wrongCount}</strong></div>
+                  <div><span>Best Round</span><strong>{formatPoints(bestRound)}</strong></div>
+                </div>
+                <div className="round-grid">
+                  {roundResults.map((result) => (
+                    <div className={`round-card ${result.correct ? "correct" : "wrong"}`} key={`${result.round}-${result.title}`}>
+                      <span>Round {result.round}</span>
+                      <b>{result.title}</b>
+                      <strong>{result.delta > 0 ? "+" : ""}{formatPoints(result.delta)}</strong>
+                    </div>
+                  ))}
+                </div>
+                <button className="primary-button" type="button" onClick={() => newGame()}>
+                  Play again →
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
 </html>
